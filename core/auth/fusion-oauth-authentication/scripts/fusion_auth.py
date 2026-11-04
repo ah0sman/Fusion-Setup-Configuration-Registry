@@ -719,11 +719,21 @@ def wait_for_authorization_code(
     port = parsed_redirect.port
     if not host or not port:
         raise ValueError("Local callback redirect URL must include host and port")
+    callback_path = parsed_redirect.path or "/"
 
     class CallbackHandler(http.server.BaseHTTPRequestHandler):
         def do_GET(self) -> None:
+            request_url = urllib.parse.urlparse(self.path)
+            if request_url.path != callback_path:
+                # Port probes (for example Codespaces/VS Code auto-forwarding)
+                # must not consume the single OAuth callback slot.
+                self.send_response(404)
+                self.send_header("Content-Type", "text/plain; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(b"Not the OAuth callback path.")
+                return
             self.server.callback_received = True  # type: ignore[attr-defined]
-            query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            query = urllib.parse.parse_qs(request_url.query)
             self.server.authorization_code = query.get("code", [""])[0]  # type: ignore[attr-defined]
             self.server.authorization_error = query.get("error", [""])[0]  # type: ignore[attr-defined]
             self.server.callback_state = query.get("state", [""])[0]  # type: ignore[attr-defined]
@@ -760,7 +770,13 @@ def wait_for_authorization_code(
         # An existing SSO session can redirect immediately; bind before opening.
         if authorize_url is not None:
             webbrowser.open(authorize_url)
-        server.handle_request()
+        deadline = time.monotonic() + timeout_seconds
+        while not server.callback_received:  # type: ignore[attr-defined]
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                break
+            server.timeout = remaining
+            server.handle_request()
     finally:
         server.server_close()
 
