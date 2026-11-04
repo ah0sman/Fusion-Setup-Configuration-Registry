@@ -1192,14 +1192,18 @@ def fusion_rest_post_json(
     *,
     access_token: str,
     json_body: dict[str, Any],
+    content_type: str | None = None,
 ) -> dict[str, Any]:
     base_url = props["restBaseUrl"].rstrip("/")
     url = f"{base_url}{resource_path}"
+    headers = {"Authorization": f"Bearer {access_token}"}
+    if content_type:
+        headers["Content-Type"] = content_type
     return http_json(
         url,
         method="POST",
         json_body=json_body,
-        headers={"Authorization": f"Bearer {access_token}"},
+        headers=headers,
         rest_props=props,
         access_token=access_token,
     )

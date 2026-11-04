@@ -17,6 +17,9 @@ add_auth_scripts_to_path()
 
 from fusion_auth import fusion_rest_get_bytes, fusion_rest_json, fusion_rest_post_json  # noqa: E402
 
+# Oracle's documented create media type for setup CSV export resources (26D farca).
+ADF_RESOURCE_ITEM_CONTENT_TYPE = "application/vnd.oracle.adf.resourceitem+json"
+
 
 SETUP_TASK_CSV_EXPORTS_RESOURCE = "/fscmRestApi/resources/11.13.18.05/setupTaskCSVExports"
 SETUP_TASK_CSV_TEMPLATE_EXPORTS_RESOURCE = "/fscmRestApi/resources/11.13.18.05/setupTaskCSVTemplateExports"
@@ -184,6 +187,7 @@ def create_task_export(
         scope.resource_root,
         access_token=access_token,
         json_body=payload,
+        content_type=ADF_RESOURCE_ITEM_CONTENT_TYPE,
     )
 
 
@@ -215,6 +219,7 @@ def create_offering_export(
         scope.resource_root,
         access_token=access_token,
         json_body=payload,
+        content_type=ADF_RESOURCE_ITEM_CONTENT_TYPE,
     )
 
 
