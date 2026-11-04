@@ -1,0 +1,5 @@
+# Project workspaces are local-only; keep only the template and docs tracked.
+/*
+!/.gitignore
+!/README.md
+!/_template/
